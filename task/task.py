@@ -49,7 +49,7 @@ class TaskManager:
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         #new_db = not os.path.exists(db_path)
 
-        self.connection = sqlite3.connect(db_path,
+        self.connection = sqlite3.connect(self.db_path,
                                           detect_types=sqlite3.PARSE_DECLTYPES,
                                           check_same_thread=False)
 

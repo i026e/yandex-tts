@@ -114,7 +114,13 @@ class ImageTextColumn(Gtk.TreeViewColumn):
         for renderer in self.cell_renderers:
             self.add_attribute(renderer, name, model_column)
 
+class ContextMenu:
+    def __init__(self, builder, parent_window):
+        self.context_menu = builder.get_object("context_menu")
+        self.context_menu.attach_to_widget(parent_window)
 
+    def popup(self, *args):
+        self.context_menu.popup(*args)
 
 
 class TaskModel:
@@ -313,11 +319,11 @@ class TaskModel:
 
 
 class TaskView:
-    def __init__(self, builder, task_model):
+    def __init__(self, builder, task_model, context_menu):
         #self.builder = builder
         self.view = builder.get_object("tasks_view")
         self.model = task_model
-        self.context_menu = builder.get_object("context_menu")
+        self.context_menu = context_menu
 
         self.view.set_model(self.model.get_model())
 
@@ -405,8 +411,9 @@ class MainWindow:
         self.task_mgr = task.TaskManager(self.config.get_value("app", "db_path",
                                                                str, config.DEFAULT_TASK_DB_FILE))
         self.task_model = TaskModel(self.builder, self.task_mgr)
-        self.task_view = TaskView(self.builder, self.task_model)
+        self.context_menu = ContextMenu(self.builder, self.window)
 
+        self.task_view = TaskView(self.builder, self.task_model, self.context_menu)
         self.init_actions()
 
     def present(self):
@@ -509,6 +516,9 @@ class Application(Gtk.Application):
     def do_startup(self):
         Gtk.Application.do_startup(self)
 
+        self.builder = Gtk.Builder()
+        self.builder.set_translation_domain(APP)
+
         action_about = Gio.SimpleAction.new("about", None)
         action_about.connect("activate", self.on_about)
         self.add_action(action_about)
@@ -517,12 +527,10 @@ class Application(Gtk.Application):
         action_quit.connect("activate", self.on_quit)
         self.add_action(action_quit)
 
-        self.builder = Gtk.Builder()
-        self.builder.set_translation_domain(APP)
+
         #self.set_app_menu(builder.get_object("app-menu"))
 
     def do_activate(self):
-        # We only allow a single window and raise any existing ones
         if not self.window:
             # Windows are associated with the application
             # when the last one is closed the application shuts down
